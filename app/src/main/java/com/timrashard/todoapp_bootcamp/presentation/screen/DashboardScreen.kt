@@ -1,7 +1,10 @@
 package com.timrashard.todoapp_bootcamp.presentation.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,35 +14,60 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.google.gson.Gson
 import com.timrashard.todoapp_bootcamp.R
+import com.timrashard.todoapp_bootcamp.data.entity.Task
 import com.timrashard.todoapp_bootcamp.presentation.component.PlanCardComponent
 import com.timrashard.todoapp_bootcamp.presentation.component.TaskItemComponent
+import com.timrashard.todoapp_bootcamp.presentation.viewmodel.DashboardViewModel
 import com.timrashard.todoapp_bootcamp.ui.theme.Blue
+import com.timrashard.todoapp_bootcamp.ui.theme.LightBlue
 import com.timrashard.todoapp_bootcamp.ui.theme.LightPink
 import com.timrashard.todoapp_bootcamp.ui.theme.MintGreen
+import com.timrashard.todoapp_bootcamp.ui.theme.SmokeBlue
 import com.timrashard.todoapp_bootcamp.ui.theme.SoftBlue
 import com.timrashard.todoapp_bootcamp.ui.theme.SoftYellow
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(navController: NavController, viewModel: DashboardViewModel) {
+    val taskList by viewModel.taskList.observeAsState(emptyList())
+    val searchText = remember { mutableStateOf("") }
+
+    LaunchedEffect(true) {
+        viewModel.getAllTasks()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -86,7 +114,7 @@ fun DashboardScreen() {
                 containerColor = Blue,
                 contentColor = Color.White,
                 onClick = {
-                    // TODO add task screen
+                    navController.navigate("task_screen")
                 }
             ) {
                 Icon(
@@ -97,7 +125,11 @@ fun DashboardScreen() {
             }
         }
     ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,7 +140,7 @@ fun DashboardScreen() {
                 ) {
                     PlanCardComponent(
                         title = "Today",
-                        count = "6",
+                        count = "-",
                         icon = R.drawable.ic_watch,
                         color = SoftBlue,
                         modifier = Modifier.weight(1f)
@@ -120,7 +152,7 @@ fun DashboardScreen() {
 
                     PlanCardComponent(
                         title = "Scheduled",
-                        count = "5",
+                        count = "-",
                         icon = R.drawable.ic_scheduled,
                         color = SoftYellow,
                         modifier = Modifier.weight(1f)
@@ -136,7 +168,7 @@ fun DashboardScreen() {
                 ) {
                     PlanCardComponent(
                         title = "All",
-                        count = "24",
+                        count = "-",
                         icon = R.drawable.ic_watch,
                         color = MintGreen,
                         modifier = Modifier.weight(1f)
@@ -148,7 +180,7 @@ fun DashboardScreen() {
 
                     PlanCardComponent(
                         title = "Overdue",
-                        count = "3",
+                        count = "-",
                         icon = R.drawable.ic_scheduled,
                         color = LightPink,
                         modifier = Modifier.weight(1f)
@@ -163,13 +195,76 @@ fun DashboardScreen() {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
-                Text(text = "Today's Task", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Today's Task",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(LightBlue, shape = RoundedCornerShape(16.dp))
+                    ) {
+                        BasicTextField(
+                            value = searchText.value,
+                            onValueChange = {
+                                searchText.value = it
+                                viewModel.searchTask(it)
+                            },
+                            textStyle = TextStyle(
+                                fontSize = 16.sp,
+                                color = Color.Black
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp)
+                        )
+
+                        if (searchText.value.isEmpty()) {
+                            Text(
+                                text = "Search...",
+                                color = Color.DarkGray,
+                                fontSize = 16.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(7) {
-                        TaskItemComponent()
+                    items(taskList) { task ->
+                        val taskJson = Gson().toJson(task)
+
+                        TaskItemComponent(
+                            task = task,
+                            onTaskClick = {
+                                navController.navigate("task_details_screen/$taskJson")
+                            },
+                            onCompleteClick = {
+                                viewModel.taskUpdate(task)
+                            },
+                            onDeleteClick = {
+                                viewModel.deleteTask(task)
+                            }
+                        )
                     }
                 }
             }

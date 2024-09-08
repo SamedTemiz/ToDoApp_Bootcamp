@@ -69,6 +69,16 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.com.google.gson)
+    implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.androidx.compose.livedata)
+    implementation(libs.androidx.activity.ktx)
+
+    // Room
+    implementation (libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
     // Navigation Compose
     implementation(libs.androidx.navigation.compose)
 
