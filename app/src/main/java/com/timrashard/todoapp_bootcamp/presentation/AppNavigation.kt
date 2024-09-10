@@ -1,6 +1,7 @@
 package com.timrashard.todoapp_bootcamp.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,19 +16,23 @@ import com.timrashard.todoapp_bootcamp.presentation.viewmodel.DashboardViewModel
 import com.timrashard.todoapp_bootcamp.presentation.viewmodel.TaskViewModel
 
 @Composable
-fun AppNavigation(
-    dashboardViewModel: DashboardViewModel,
-    taskViewModel: TaskViewModel
-) {
+fun AppNavigation() {
     val navController = rememberNavController()
+    val taskViewModel = hiltViewModel<TaskViewModel>()
 
     NavHost(navController = navController, startDestination = "dashboard") {
         composable("dashboard") {
-            DashboardScreen(navController = navController, viewModel = dashboardViewModel)
+            DashboardScreen(
+                navController = navController,
+                viewModel = hiltViewModel<DashboardViewModel>()
+            )
         }
 
         composable("task_screen") {
-            CreateTaskScreen(navController = navController, viewModel = taskViewModel)
+            CreateTaskScreen(
+                navController = navController,
+                viewModel = taskViewModel
+            )
         }
 
         composable("task_details_screen/{task}",
